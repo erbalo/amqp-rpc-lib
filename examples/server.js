@@ -2,7 +2,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 const amqplib = require('amqplib')
-const AmqpRpcProducer = require('../src/amq-rpc-producer')
+const AmqpRpcProducer = require('../lib/amq-rpc-producer').default
 const { v4: uuidv4 } = require('uuid');
 
 /**
@@ -34,7 +34,9 @@ function delay(ms) {
 async function initServer(requestsQueue) {
     console.log('Server starting');
     const connection = await amqplib.connect('amqp://localhost');
-    const server = new AmqpRpcProducer(connection, { requestsQueue });
+    const server = new AmqpRpcProducer(connection, {
+        requestsQueue: requestsQueue
+    } );
 
     server.registerListener(async (obj) => {
         console.log("Request to process:", obj);

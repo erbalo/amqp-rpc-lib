@@ -1,12 +1,14 @@
-const assert = require('assert');
+import assert from 'assert';
 
 /**
  * This class is responsible for (de)serializing results of a specific commands.
- * Instances of this class are sent by {@link AmqpRpcServer} in response to command requests.
+ * Instances of this class are sent by {@link AmqpRpcProducer} in response to command requests.
  *
  * @class
  */
-class CommandResult {
+export default class CommandResult {
+    state: any;
+    data: object;
     /**
      * Creates a new instance of a command result.
      *
@@ -23,7 +25,7 @@ class CommandResult {
      *  data: ['some', 'data', 'here'],
      * });
      */
-    constructor(state, data) {
+    constructor(state, data: object) {
         this.state = state;
         this.data = data;
     }
@@ -34,10 +36,24 @@ class CommandResult {
      * @returns {Buffer}
      */
     pack() {
+        CommandResult.prototype._replacer = function (key, value) {
+            if (this.isErrnoException(value)) {
+                return {
+                    message: value.message,
+                    name: value.name,
+                    stack: value.stack,
+                    code: value.code,
+                    fileName: value.path,
+                };
+            }
+
+            return value;
+        };
+
         const packed = JSON.stringify({
             state: this.state,
-            data: this.data
-        }, this.constructor._replacer);
+            data: this.data,
+        });
 
         return Buffer.from(packed);
     }
@@ -51,8 +67,15 @@ class CommandResult {
     static get STATES() {
         return {
             SUCCESS: 'success',
-            ERROR: 'error'
+            ERROR: 'error',
         };
+    }
+
+    isErrnoException(object: unknown): object is NodeJS.ErrnoException {
+        return (
+            Object.prototype.hasOwnProperty.call(object, 'code') ||
+            Object.prototype.hasOwnProperty.call(object, 'errno')
+        );
     }
 
     /**
@@ -64,16 +87,14 @@ class CommandResult {
      * @param {*} value
      * @returns {*}
      */
-    static _replacer(key, value) {
-        if (value instanceof Error) {
+    _replacer(key, value) {
+        if (this.isErrnoException(value)) {
             return {
                 message: value.message,
                 name: value.name,
                 stack: value.stack,
                 code: value.code,
-                fileName: value.fileName,
-                lineNumber: value.lineNumber,
-                columnNumber: value.columnNumber
+                fileName: value.path,
             };
         }
 
@@ -87,8 +108,8 @@ class CommandResult {
      * @param args
      * @returns {CommandResult}
      */
-    static create(...args) {
-        return new this(...args);
+    static create(state, args: object) {
+        return new this(state, args);
     }
 
     /**
@@ -110,21 +131,16 @@ class CommandResult {
 
         assert(obj.state, 'Expect state field to be present and not false it serialized command result');
         assert(
-            obj.state === CommandResult.STATES.SUCCESS
-            || obj.state === CommandResult.STATES.ERROR,
-            `Expect state field to be one of ${CommandResult.STATES.SUCCESS}, ${CommandResult.STATES.ERROR}`
+            obj.state === CommandResult.STATES.SUCCESS || obj.state === CommandResult.STATES.ERROR,
+            `Expect state field to be one of ${CommandResult.STATES.SUCCESS}, ${CommandResult.STATES.ERROR}`,
         );
 
         if (obj.state === CommandResult.STATES.ERROR) {
-            const error = new Error(obj.data.message, obj.data.fileName, obj.data.lineNumber);
+            const error = new Error(obj.data.message);
             error.stack = obj.data.stack;
-            error.code = obj.data.code;
-            error.columnNumber = obj.data.columnNumber;
             obj.data = error;
         }
 
         return new CommandResult(obj.state, obj.data);
     }
 }
-
-module.exports = CommandResult;

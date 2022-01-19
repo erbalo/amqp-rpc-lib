@@ -1,13 +1,22 @@
-const Command = require('./command');
-const CommandResult = require('./command-result');
-const AmqpEndpoint = require('./amq-endpoint');
+import { Connection } from 'amqplib';
+import Command from './command';
+import CommandResult from './command-result';
+import AmqpEndpoint from './amq-endpoint';
+
+export interface AmqpProducerParamOptions {
+    requestsQueue?: string;
+    [key: string]: any;
+}
 
 /**
  * Implementation for an AMQP RPC producer.
  *
  * @class
  */
-class AmqpRpcProducer extends AmqpEndpoint {
+export default class AmqpRpcProducer extends AmqpEndpoint {
+    _requestsQueue: string;
+    _commands: any;
+    _cb: any;
     /**
      * Creates a new instance of RPC producer.
      *
@@ -17,7 +26,7 @@ class AmqpRpcProducer extends AmqpEndpoint {
      * @param {String} params.requestsQueue queue when AMQPRPC client sends commands, should correspond with AMQPRPCClient
      *    default is '' which means auto-generated queue name
      */
-    constructor(connection, params = {}) {
+    constructor(connection: Connection, params: AmqpProducerParamOptions) {
         params.requestsQueue = params.requestsQueue || '';
 
         super(connection, params);
@@ -42,7 +51,7 @@ class AmqpRpcProducer extends AmqpEndpoint {
         }
 
         const consumeResult = await this._channel.consume(this._requestsQueue, (msg) => this._handleMsg(msg));
-        //this._consumerTag = consumeResult.consumerTag
+        // this._consumerTag = consumeResult.consumerTag
     }
 
     /**
@@ -51,7 +60,7 @@ class AmqpRpcProducer extends AmqpEndpoint {
      * @returns {Promise}
      */
     async disconnect() {
-        //await this._channel.cancel(this._consumerTag);
+        // await this._channel.cancel(this._consumerTag);
 
         if (this._params.requestsQueue === '') {
             await this._channel.deleteQueue(this._requestsQueue);
@@ -72,7 +81,6 @@ class AmqpRpcProducer extends AmqpEndpoint {
      * @private
      */
     async _handleMsg(msg) {
-
         this._channel.ack(msg);
         const replyTo = msg.properties.replyTo;
         const correlationId = msg.properties.correlationId;
@@ -83,7 +91,6 @@ class AmqpRpcProducer extends AmqpEndpoint {
 
             const content = new CommandResult(CommandResult.STATES.SUCCESS, result).pack();
             this._channel.sendToQueue(replyTo, content, { correlationId, persistent });
-
         } catch (error) {
             const content = new CommandResult(CommandResult.STATES.ERROR, error).pack();
             this._channel.sendToQueue(replyTo, content, { correlationId, persistent });
@@ -102,7 +109,7 @@ class AmqpRpcProducer extends AmqpEndpoint {
             return this._commands[command.command].apply(null, [command.args]);
         }*/
         if (this._cb && this._cb instanceof Function) {
-            return this._cb.apply(null, [command.args])
+            return this._cb.apply(null, [command.args]);
         }
 
         throw new Error(`Unknown command ${command.command}`);
@@ -116,5 +123,3 @@ class AmqpRpcProducer extends AmqpEndpoint {
         return this._requestsQueue;
     }
 }
-
-module.exports = AmqpRpcProducer;

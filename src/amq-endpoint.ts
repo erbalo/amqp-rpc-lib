@@ -1,11 +1,14 @@
-'use strict';
+import { Channel } from 'amqplib';
 
 /**
  * Base class for AmqpRpcClient.
  *
  * @class
  */
-class AmqpEndpoint {
+export default class AmqpEndpoint {
+    _connection: any;
+    _channel: Channel;
+    _params: any;
     /**
      *
      * @param {*} connection Connection reference created from `amqplib` library
@@ -46,5 +49,3 @@ class AmqpEndpoint {
         this._channel = null;
     }
 }
-
-module.exports = AmqpEndpoint;

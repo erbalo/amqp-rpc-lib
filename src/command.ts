@@ -1,4 +1,4 @@
-const assert = require('assert');
+import assert from 'assert';
 
 /**
  * This class is responsible for wrapping command structure for sending across queues.
@@ -6,7 +6,9 @@ const assert = require('assert');
  *
  * @class
  */
-class Command {
+export default class Command {
+    command: any;
+    args: object;
     /**
      * Creates a new command instance.
      *
@@ -18,7 +20,7 @@ class Command {
      *  [1, 2, 3]
      * ]);
      */
-    constructor(command, args = {}) {
+    constructor(command, args: object = {}) {
         this.command = command;
         this.args = args;
     }
@@ -31,7 +33,7 @@ class Command {
     pack() {
         const packed = JSON.stringify({
             command: this.command,
-            args: this.args
+            args: this.args,
         });
 
         return Buffer.from(packed);
@@ -44,8 +46,8 @@ class Command {
      * @param args
      * @returns {Command}
      */
-    static create(...args) {
-        return new this(...args);
+    static create(args: object) {
+        return new this(args);
     }
 
     /**
@@ -62,10 +64,8 @@ class Command {
         assert(obj.command, 'Expect command field to be present and not false in serialized command');
         assert(typeof obj.command === 'string', 'Expect command field to be string');
         assert(obj.args, 'Expect args field to be present and not false in serialized command');
-        //assert(obj.args instanceof Array, 'Expect args field to be array');
+        // assert(obj.args instanceof Array, 'Expect args field to be array');
 
         return new Command(obj.command, obj.args);
     }
 }
-
-module.exports = Command;
