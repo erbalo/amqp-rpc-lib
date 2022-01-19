@@ -1,14 +1,24 @@
-const { v4: uuidv4 } = require('uuid');
-const Command = require('./command')
-const CommandResult = require('./command-result')
-const AmqpEndpoint = require('./amq-endpoint')
+import { v4 as uuidv4 } from 'uuid';
+import Command from './command';
+import CommandResult from './command-result';
+import AmqpEndpoint from './amq-endpoint';
+
+export interface AmqpConsumerParamOptions {
+    repliesQueue?: string;
+    requestsQueue?: string;
+    timeout?: number;
+    [key: string]: any;
+}
 
 /**
  * This class is responsible for sending commands to the RPC server.
  *
  * @class
  */
-class AmpqRpcConsumer extends AmqpEndpoint {
+export default class AmpqRpcConsumer extends AmqpEndpoint {
+    _repliesQueue: any;
+    _requests: any;
+    _defaultMessageOptions: any;
     /**
      * Creates a new instance of an RPC consumer.
      *
@@ -21,10 +31,9 @@ class AmpqRpcConsumer extends AmqpEndpoint {
      * @param {Number} [params.timeout=60000] Timeout for cases when server is not responding
      * @param {Object} [params.defaultMessageOptions] additional options for publishing the request to the queue
      */
-    constructor(connection, params = {}) {
+    constructor(connection, params: AmqpConsumerParamOptions) {
         params.repliesQueue = params.repliesQueue || '';
-        params.timeout = params.timeout || AmpqRpcConsumer
-    .TIMEOUT;
+        params.timeout = params.timeout || AmpqRpcConsumer.TIMEOUT;
 
         if (!params.requestsQueue) {
             throw new Error('params.requestsQueue is required');
@@ -47,7 +56,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
      * client.sendAndReceive({foo: 'bar'});
      */
     async sendAndReceive(args, messageOptions = {}) {
-        const command = 'command-execution'
+        const command = 'command-execution';
         const cmd = new Command(command, args);
 
         const correlationId = uuidv4();
@@ -56,10 +65,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
         const requestsQueue = this._params.requestsQueue;
         const commonProperties = { replyTo, correlationId };
 
-        const properties = Object.assign({},
-            messageOptions,
-            this._defaultMessageOptions,
-            commonProperties);
+        const properties = Object.assign({}, messageOptions, this._defaultMessageOptions, commonProperties);
 
         let resolve;
         let reject;
@@ -76,11 +82,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
             command,
         });
 
-        this._channel.sendToQueue(
-            requestsQueue,
-            cmd.pack(),
-            properties
-        );
+        this._channel.sendToQueue(requestsQueue, cmd.pack(), properties);
 
         return promise;
     }
@@ -99,7 +101,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
         }
 
         const consumeResult = await this._channel.consume(this._repliesQueue, (msg) => this._dispatchReply(msg));
-        //this._consumerTag = consumeResult.consumerTag
+        // this._consumerTag = consumeResult.consumerTag
     }
 
     /**
@@ -108,7 +110,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
      * @returns {Promise}
      */
     async disconnect() {
-        //await this._channel.cancel(this._consumerTag);
+        // await this._channel.cancel(this._consumerTag);
 
         if (this._params.repliesQueue === '') {
             await this._channel.deleteQueue(this._repliesQueue);
@@ -119,7 +121,6 @@ class AmpqRpcConsumer extends AmqpEndpoint {
         await super.disconnect();
     }
 
-
     /**
      * Replies handler
      * @param {Object} msg, returned by channel.consume
@@ -129,7 +130,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
     async _dispatchReply(msg) {
         this._channel.ack(msg);
         if (!msg) {
-            //skip, it's queue close message
+            // skip, it's queue close message
             return;
         }
 
@@ -137,7 +138,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
         const context = this._requests.get(correlationId);
         this._requests.delete(correlationId);
         if (!context) {
-            //it would be good to notice somehow, but we don't have logger or something here at all
+            // it would be good to notice somehow, but we don't have logger or something here at all
             return;
         }
 
@@ -171,7 +172,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
      * @static
      * @returns {Number}
      */
-    static get TIMEOUT() {
+    static get TIMEOUT(): number {
         return 60 * 1000;
     }
 
@@ -179,9 +180,7 @@ class AmpqRpcConsumer extends AmqpEndpoint {
      * Allows to get generated value when params.repliesQueue was set to '' (empty string) or omitted
      * @returns {String} an actual name of the queue used by the instance for receiving replies
      */
-    get repliesQueue() {
+    get repliesQueue(): string {
         return this._repliesQueue;
     }
 }
-
-module.exports = AmpqRpcConsumer;

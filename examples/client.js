@@ -2,7 +2,7 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 const amqplib = require('amqplib')
-const AmpqRpcConsumer = require('../src/amq-rpc-consumer')
+const AmpqRpcConsumer = require('../lib/amq-rpc-consumer').default
 
 function delay(ms) {
     return new Promise(resolve => {
@@ -20,7 +20,7 @@ async function initClient1(requestsQueue) {
     const connection = await amqplib.connect('amqp://localhost');
     const client = new AmpqRpcConsumer(connection, {
         requestsQueue,
-        timeout: 15000
+        timeout: 100
     });
 
     await client.start();
