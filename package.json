@@ -1,35 +1,38 @@
 {
-  "name": "amq-rpc-core",
-  "version": "1.0.2",
-  "description": "Amqp RPC library for NodeJS",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
-  "scripts": {
-    "build": "npx tsc",
-    "build:clean": "rm -rf lib",
-    "build:types": "npx tsc -d --declarationDir dist/lib --declarationMap --emitDeclarationOnly",
-    "format": "prettier --write \"src/**/*.ts|src/**/*.js\"",
-    "lint": "tslint -p tsconfig.json",
-    "prepare": "npm run build",
-    "preversion": "npm run lint",
-    "version": "npm run format"
-  },
-  "author": "Erick Barrera",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/amqplib": "^0.8.2",
-    "@types/node": "^17.0.10",
-    "amqplib": "^0.8.0",
-    "prettier": "^2.5.1",
-    "source-map-support": "^0.5.21",
-    "tslint": "^6.1.3",
-    "tslint-config-prettier": "^1.18.0",
-    "typescript": "^4.5.4"
-  },
-  "dependencies": {
-    "uuidv4": "^6.2.12"
-  },
-  "files": [
-    "lib/**/*"
-  ]
+    "name": "amq-rpc",
+    "version": "1.0.0",
+    "description": "Amqp RPC library for NodeJS",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "scripts": {
+        "build": "npx tsc",
+        "build:clean": "rm -rf lib",
+        "build:types": "npx tsc -d --declarationDir dist/lib --declarationMap --emitDeclarationOnly",
+        "format": "prettier --write \"src/**/*.ts|src/**/*.js\"",
+        "lint": "tslint -p tsconfig.json",
+        "prepare": "npm run build",
+        "preversion": "npm run lint",
+        "version": "npm run format"
+    },
+    "author": "Erick Barrera",
+    "license": "MIT",
+    "repository": {
+        "url": "https://github.com/erbalo/amq-rpc"
+    },
+    "devDependencies": {
+        "@types/amqplib": "^0.8.2",
+        "@types/node": "^17.0.10",
+        "prettier": "^2.5.1",
+        "source-map-support": "^0.5.21",
+        "tslint": "^6.1.3",
+        "tslint-config-prettier": "^1.18.0",
+        "typescript": "^4.5.4"
+    },
+    "dependencies": {
+        "uuidv4": "^6.2.12",
+        "amqplib": "^0.8.0"
+    },
+    "files": [
+        "lib/**/*"
+    ]
 }
