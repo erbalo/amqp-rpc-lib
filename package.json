@@ -1,5 +1,5 @@
 {
-    "name": "amqp-rpc",
+    "name": "amqp-rpc-lib",
     "version": "1.0.0",
     "description": "Amqp RPC library for NodeJS",
     "main": "lib/index.js",
@@ -17,7 +17,7 @@
     "author": "Erick Barrera",
     "license": "MIT",
     "repository": {
-        "url": "https://github.com/erbalo/amq-rpc"
+        "url": "https://github.com/erbalo/amqp-rpc-lib"
     },
     "devDependencies": {
         "@types/amqplib": "^0.8.2",
