@@ -1,5 +1,5 @@
 {
-    "name": "amq-rpc",
+    "name": "amqp-rpc",
     "version": "1.0.0",
     "description": "Amqp RPC library for NodeJS",
     "main": "lib/index.js",
