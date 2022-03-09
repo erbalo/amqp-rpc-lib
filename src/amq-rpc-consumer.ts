@@ -19,6 +19,7 @@ export default class AmpqRpcConsumer extends AmqpEndpoint {
     _repliesQueue: any;
     _requests: any;
     _defaultMessageOptions: any;
+
     /**
      * Creates a new instance of an RPC consumer.
      *
@@ -55,11 +56,19 @@ export default class AmpqRpcConsumer extends AmqpEndpoint {
      * @example
      * client.sendAndReceive({foo: 'bar'});
      */
-    async sendAndReceive(args, messageOptions = {}) {
+    async sendAndReceive(args, messageOptions: { [key: string]: any }) {
         const command = 'command-execution';
         const cmd = new Command(command, args);
+        let correlationId = uuidv4();
 
-        const correlationId = uuidv4();
+        if (messageOptions && messageOptions.correlationId) {
+            correlationId = messageOptions.correlationId;
+        }
+
+        if (messageOptions && messageOptions.correlation_id) {
+            correlationId = messageOptions.correlation_id;
+        }
+
         const replyTo = this._repliesQueue;
         const timeout = this._params.timeout;
         const requestsQueue = this._params.requestsQueue;

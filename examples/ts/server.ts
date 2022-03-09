@@ -1,0 +1,74 @@
+/* eslint-disable no-console  */
+/* eslint-disable import/no-extraneous-dependencies */
+
+import amqplib from 'amqplib';
+import AmqpRpcProducer from '../../src/amq-rpc-producer';
+import { v4 as uuidv4 } from 'uuid';
+
+/**
+ *
+ * @return {Promise<String>} queueName when server listens on for requests
+ */
+async function initialSetup(queueName) {
+    console.log(`Initialazing queue ${queueName}`);
+    const connection = await amqplib.connect('amqp://localhost');
+    const channel = await connection.createChannel();
+    await channel.assertQueue(queueName, {
+        deadLetterRoutingKey: queueName + '.expired',
+        deadLetterExchange: queueName + '.direct',
+        messageTtl: 15000,
+        durable: true
+    });
+}
+
+function delay(ms) {
+    return new Promise(resolve => {
+        setTimeout(resolve, ms);
+    })
+}
+
+/**
+ *
+ * @param requestsQueue
+ * @return {Promise<void>}
+ */
+async function initServer(requestsQueue) {
+    console.log('Server starting');
+    const connection = await amqplib.connect('amqp://localhost');
+    const server = new AmqpRpcProducer(connection, {
+        requestsQueue: requestsQueue
+    } );
+
+    server.registerListener(async (obj) => {
+        console.log("Request to process:", obj);
+
+        if(obj.name === 'erick'){
+            return {
+                status_code: 404,
+                message: "not found custom message"
+            }
+        }
+
+        return {
+            status_code: 201,
+            message: "User created",
+            data: {
+                id: uuidv4(),
+                created_at: Date.now(),
+            }
+        }
+    });
+
+    await server.start();
+    console.log('Server is ready');
+}
+
+
+(async function main() {
+    console.info('\n setup\n');
+    const queueName = 'edu.api.user.service.create';
+    await initialSetup(queueName);
+
+    console.info('\n launch server:\n');
+    await initServer(queueName)
+})().catch(console.error.bind(console, 'General error:'));

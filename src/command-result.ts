@@ -9,6 +9,7 @@ import assert from 'assert';
 export default class CommandResult {
     state: any;
     data: object;
+
     /**
      * Creates a new instance of a command result.
      *
