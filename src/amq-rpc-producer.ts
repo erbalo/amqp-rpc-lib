@@ -2,6 +2,9 @@ import { Connection } from 'amqplib';
 import Command from './command';
 import CommandResult from './command-result';
 import AmqpEndpoint from './amq-endpoint';
+import getLogger from './logger';
+
+const Logger = getLogger(module);
 
 export interface AmqpProducerParamOptions {
     requestsQueue?: string;
@@ -72,7 +75,6 @@ export default class AmqpRpcProducer extends AmqpEndpoint {
 
     registerListener(cb) {
         this._cb = cb;
-
         return this;
     }
 
@@ -87,11 +89,11 @@ export default class AmqpRpcProducer extends AmqpEndpoint {
         const persistent = msg.properties.deliveryMode !== 1;
 
         try {
-            const result = await this._dispatchCommand(msg);
-
+            const result = await this._dispatchCommand(msg, correlationId);
             const content = new CommandResult(CommandResult.STATES.SUCCESS, result).pack();
             this._channel.sendToQueue(replyTo, content, { correlationId, persistent });
         } catch (error) {
+            Logger.error(`[${correlationId}] ${error.message}`);
             const content = new CommandResult(CommandResult.STATES.ERROR, error).pack();
             this._channel.sendToQueue(replyTo, content, { correlationId, persistent });
         }
@@ -103,13 +105,13 @@ export default class AmqpRpcProducer extends AmqpEndpoint {
      * @private
      * @param {Object} msg
      */
-    _dispatchCommand(msg) {
+    _dispatchCommand(msg, correlationId) {
         const command = Command.fromBuffer(msg.content);
         /*if (this._commands[command.command] && this._commands[command.command] instanceof Function) {
             return this._commands[command.command].apply(null, [command.args]);
         }*/
         if (this._cb && this._cb instanceof Function) {
-            return this._cb.apply(null, [command.args]);
+            return this._cb.apply(null, [command.args, correlationId]);
         }
 
         throw new Error(`Unknown command ${command.command}`);

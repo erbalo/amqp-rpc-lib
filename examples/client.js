@@ -27,7 +27,9 @@ async function initClient1(requestsQueue) {
     console.log("Ready")
 
     try {
-        const response1 = await client.sendAndReceive([1, 2, 3]);
+        const response1 = await client.sendAndReceive({'name': 'erick'}, {
+            correlationId : 'correlation_id_test'
+        });
         console.log("Getting response", response1)
     } catch (e) {
         console.error("Error where?", e)
